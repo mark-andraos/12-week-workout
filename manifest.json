@@ -1,0 +1,20 @@
+{
+  "name": "12 Week Workout",
+  "short_name": "12WW",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/C9A84C/000000?text=12W",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/C9A84C/000000?text=12W",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
