@@ -182,9 +182,10 @@
   .week-row.current-week .week-status { color:var(--gold); }
   .week-row .week-status { color:var(--text-dim); }
 
-  .week-mini-bar { width:60px; height:4px; background:var(--surface3); border-radius:2px; margin-top:4px; }
-  .week-mini-fill { height:4px; border-radius:2px; background:var(--green); }
-  .week-row.current-week .week-mini-fill { background:var(--gold); }
+  .week-dots { display:flex; gap:6px; margin-top:6px; }
+  .week-dot-session { width:10px; height:10px; border-radius:50%; background:var(--surface3); border:1.5px solid var(--border); flex-shrink:0; }
+  .week-dot-session.done { background:var(--green); border-color:var(--green); }
+  .week-dot-session.next { background:var(--gold); border-color:var(--gold); }
 
   /* ══ PBs SCREEN ══ */
   .pb-workout-section { margin:12px 16px 0; }
@@ -725,13 +726,21 @@ function renderTimeline() {
     const weeksHTML = phaseWeeks.map(({ w, weekDays, doneCount, isCurrent, isDone }) => {
       const weekClass = isDone ? 'done' : isCurrent ? 'current-week' : '';
       const statusText = isDone ? '✓ Complete' : isCurrent ? 'In Progress' : doneCount > 0 ? `${doneCount}/4` : 'Upcoming';
-      const startDateStr = weekDays.length ? formatDate(weekDays[0].date) : '';
+      // Build 4 session dots
+      const dotsHTML = [1,2,3,4].map(wn => {
+        const day = weekDays.find(d => d.workoutNum === wn);
+        const isDoneDay = day && completed.has(day.date + '_' + day.workoutNum);
+        const isNextDay = !isDoneDay && day && currentDay && day.date === currentDay.date && day.workoutNum === currentDay.workoutNum;
+        const cls = isDoneDay ? 'done' : isNextDay ? 'next' : '';
+        return `<div class="week-dot-session ${cls}"></div>`;
+      }).join('');
+
       return `<div class="week-row ${weekClass}">
         <div class="week-dot"></div>
         <div class="week-info">
           <div class="week-label">Week ${w}</div>
-          <div class="week-reps">${WEEK_REPS[w]} · ${WEEK_TECHNIQUE[w]}${startDateStr ? ' · ' + startDateStr : ''}</div>
-          <div class="week-mini-bar"><div class="week-mini-fill" style="width:${(doneCount/4)*100}%"></div></div>
+          <div class="week-reps">${WEEK_REPS[w]} · ${WEEK_TECHNIQUE[w]}</div>
+          <div class="week-dots">${dotsHTML}</div>
         </div>
         <div class="week-status">${statusText}</div>
       </div>`;
