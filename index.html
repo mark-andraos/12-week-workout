@@ -802,17 +802,30 @@ async function confirmWeight() {
 async function skipExercise() { await logExercise(activeExercise.exercise, 0, 'skipped'); closeModal(); }
 
 async function logExercise(exercise, weight_kg, notes) {
+  // 1. Update UI immediately (optimistic)
+  const existing = allLogs.find(l => l.exercise === exercise);
+  const tempId = 'temp_' + Date.now();
+  allLogs = allLogs.filter(l => l.exercise !== exercise);
+  allLogs.push({ log_id: tempId, session_id: currentSessionId, exercise, weight_kg, notes });
+  renderExerciseList(currentWorkoutExercises, allLogs);
+  showToast(notes === 'skipped' ? 'Skipped' : `${weight_kg}kg logged ✓`, notes === 'skipped' ? '' : 'success');
+
+  // 2. Save to API in background
   try {
-    const existing = allLogs.find(l => l.exercise === exercise);
-    if (existing && existing.log_id) {
+    if (existing && existing.log_id && !existing.log_id.startsWith('temp_')) {
       await api('deleteLog', { log_id: existing.log_id });
-      allLogs = allLogs.filter(l => l.exercise !== exercise);
     }
     const res = await api('logSet', { session_id: currentSessionId, exercise, set_num: 1, reps: activeExercise ? activeExercise.repsMax : 0, weight_kg, notes });
-    allLogs.push({ log_id: res.log_id, session_id: currentSessionId, exercise, weight_kg, notes });
+    // Replace temp ID with real one
+    const entry = allLogs.find(l => l.log_id === tempId);
+    if (entry) entry.log_id = res.log_id;
+  } catch (e) {
+    // Revert on failure
+    allLogs = allLogs.filter(l => l.log_id !== tempId);
+    if (existing) allLogs.push(existing);
     renderExerciseList(currentWorkoutExercises, allLogs);
-    showToast(notes === 'skipped' ? 'Skipped' : `${weight_kg}kg logged ✓`, notes === 'skipped' ? '' : 'success');
-  } catch (e) { showToast('Failed to save', 'error'); }
+    showToast('Failed to save — try again', 'error');
+  }
 }
 
 async function completeWorkout(silent = false) {
