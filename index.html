@@ -561,14 +561,51 @@ async function api(action, data = {}) {
   return res.json();
 }
 
-async function init() {
+const CACHE_KEY = '12ww_cache';
+
+function loadCache() {
   try {
-    [config, sessions] = await Promise.all([api('getConfig'), api('getSessions')]);
-    if (!Array.isArray(sessions)) sessions = [];
-  } catch (e) { showToast('Connection error', 'error'); }
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  renderLog();
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) return JSON.parse(cached);
+  } catch(e) {}
+  return null;
+}
+
+function saveCache(data) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+async function init() {
+  // 1. Load from cache instantly
+  const cached = loadCache();
+  if (cached) {
+    config = cached.config || {};
+    sessions = cached.sessions || [];
+    // Show app immediately with cached data
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    renderLog();
+  }
+
+  // 2. Fetch fresh data in background (single combined call)
+  try {
+    const fresh = await api('getInitialData');
+    config = fresh.config || {};
+    sessions = Array.isArray(fresh.sessions) ? fresh.sessions : [];
+    saveCache({ config, sessions });
+    // Re-render silently with fresh data
+    if (!cached) {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+    }
+    renderLog();
+  } catch (e) {
+    if (!cached) {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      showToast('Connection error — using cached data', 'error');
+    }
+  }
 }
 
 function showScreen(name) {
