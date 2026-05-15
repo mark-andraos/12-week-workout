@@ -795,13 +795,18 @@ function updateWeightDisplay() { document.getElementById('weightDisplay').textCo
 async function confirmWeight() {
   if (!numpadValue && !activeExercise.isPlank) { showToast('Enter a weight', 'error'); return; }
   const kg = activeExercise.isPlank ? 0 : parseFloat(numpadValue);
-  await logExercise(activeExercise.exercise, kg, '');
-  closeModal();
+  const ex = { ...activeExercise };
+  closeModal(); // close instantly
+  await logExercise(ex.exercise, kg, '', ex);
 }
 
-async function skipExercise() { await logExercise(activeExercise.exercise, 0, 'skipped'); closeModal(); }
+async function skipExercise() {
+  const ex = { ...activeExercise };
+  closeModal(); // close instantly
+  await logExercise(ex.exercise, 0, 'skipped', ex);
+}
 
-async function logExercise(exercise, weight_kg, notes) {
+async function logExercise(exercise, weight_kg, notes, exObj) {
   // 1. Update UI immediately (optimistic)
   const existing = allLogs.find(l => l.exercise === exercise);
   const tempId = 'temp_' + Date.now();
@@ -811,11 +816,12 @@ async function logExercise(exercise, weight_kg, notes) {
   showToast(notes === 'skipped' ? 'Skipped' : `${weight_kg}kg logged ✓`, notes === 'skipped' ? '' : 'success');
 
   // 2. Save to API in background
+  const repsMax = exObj ? exObj.repsMax : 0;
   try {
     if (existing && existing.log_id && !existing.log_id.startsWith('temp_')) {
       await api('deleteLog', { log_id: existing.log_id });
     }
-    const res = await api('logSet', { session_id: currentSessionId, exercise, set_num: 1, reps: activeExercise ? activeExercise.repsMax : 0, weight_kg, notes });
+    const res = await api('logSet', { session_id: currentSessionId, exercise, set_num: 1, reps: repsMax, weight_kg, notes });
     // Replace temp ID with real one
     const entry = allLogs.find(l => l.log_id === tempId);
     if (entry) entry.log_id = res.log_id;
