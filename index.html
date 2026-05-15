@@ -998,7 +998,7 @@ function showToast(msg, type = '') {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+// Service worker disabled for stability
 
 init();
 </script>
