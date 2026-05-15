@@ -561,51 +561,20 @@ async function api(action, data = {}) {
   return res.json();
 }
 
-const CACHE_KEY = '12ww_cache';
-
-function loadCache() {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) return JSON.parse(cached);
-  } catch(e) {}
-  return null;
-}
-
-function saveCache(data) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
-}
-
 async function init() {
-  // 1. Load from cache instantly
-  const cached = loadCache();
-  if (cached) {
-    config = cached.config || {};
-    sessions = cached.sessions || [];
-    // Show app immediately with cached data
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    renderLog();
-  }
-
-  // 2. Fetch fresh data in background (single combined call)
   try {
-    const fresh = await api('getInitialData');
-    config = fresh.config || {};
-    sessions = Array.isArray(fresh.sessions) ? fresh.sessions : [];
-    saveCache({ config, sessions });
-    // Re-render silently with fresh data
-    if (!cached) {
-      document.getElementById('loadingScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-    }
-    renderLog();
+    const [cfg, sess] = await Promise.all([
+      api('getConfig'),
+      api('getSessions')
+    ]);
+    config = cfg || {};
+    sessions = Array.isArray(sess) ? sess : [];
   } catch (e) {
-    if (!cached) {
-      document.getElementById('loadingScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      showToast('Connection error — using cached data', 'error');
-    }
+    showToast('Connection error', 'error');
   }
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  renderLog();
 }
 
 function showScreen(name) {
@@ -618,10 +587,18 @@ function showScreen(name) {
 }
 
 // DATE HELPERS
-function toDateStr(d) { return d.toISOString().split('T')[0]; }
+function toDateStr(d) {
+  // Use local date to avoid timezone shifting
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
 function parseDate(str) {
   if (!str) return null;
-  const [y, m, d] = str.split('-').map(Number);
+  // Strip time portion if present (e.g. 2026-05-16T14:00:00.000Z -> 2026-05-16)
+  const dateOnly = String(str).split('T')[0];
+  const [y, m, d] = dateOnly.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 function formatDate(str) {
