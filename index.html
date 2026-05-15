@@ -696,12 +696,11 @@ function renderTimeline() {
     <div class="timeline-overview">
       <div class="progress-top">
         <div class="progress-label">Overall Progress</div>
-        <div class="progress-value">${completedCount} / 48 · ${pct}%</div>
       </div>
-      <div class="progress-bar-bg" style="margin-top:10px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="progress-bar-bg" style="margin-top:6px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
       <div class="tl-stats">
-        <div class="tl-stat"><div class="tl-stat-val">${completedCount}</div><div class="tl-stat-label">Done</div></div>
-        <div class="tl-stat"><div class="tl-stat-val">${48 - completedCount}</div><div class="tl-stat-label">Left</div></div>
+        <div class="tl-stat"><div class="tl-stat-val">${completedCount}</div><div class="tl-stat-label">Workouts Done</div></div>
+        <div class="tl-stat"><div class="tl-stat-val">${48 - completedCount}</div><div class="tl-stat-label">Workouts Left</div></div>
         <div class="tl-stat"><div class="tl-stat-val">${pct}%</div><div class="tl-stat-label">Complete</div></div>
       </div>
     </div>`;
